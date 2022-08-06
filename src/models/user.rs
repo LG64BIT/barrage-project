@@ -73,7 +73,7 @@ impl User {
         })
     }
 
-    pub fn get(connection: &PgConnection, id: &str) -> Result<Self, UserError> {
+    pub fn get_by_id(connection: &PgConnection, id: &str) -> Result<Self, UserError> {
         let result = users::table
             .select(users::all_columns)
             .filter(users::id.eq(id))
@@ -153,14 +153,13 @@ impl User {
     }
 
     pub fn is_logged(req: &HttpRequest) -> Result<User, UserError> {
-        let user_cookie = match req.cookie("jwt") {
-            Some(cookie) => cookie,
-            None => return Err(UserError::NoPermission),
+        let user_jwt = match req.headers().get("jwt") {
+            Some(jwt) => jwt.to_str().unwrap(),
+            None => return Err(UserError::InvalidCredentials),
         };
-        let user_jwt = user_cookie.value().to_string();
-        match jwt::verify(user_jwt) {
+        match jwt::verify(String::from(user_jwt)) {
             Ok(user) => Ok(user),
-            Err(_) => Err(UserError::NoPermission),
+            Err(_) => Err(UserError::InvalidCredentials),
         }
     }
 }
@@ -189,10 +188,7 @@ impl NewUser {
             .get_result::<User>(connection)
         {
             Ok(user) => Ok(user),
-            Err(e) => {
-                dbg!(e);
-                Err(UserError::ConnectionError)
-            }
+            Err(_) => Err(UserError::ConnectionError),
         }
     }
 }

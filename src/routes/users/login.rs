@@ -1,20 +1,17 @@
-use actix_web::{web::Json, HttpResponse, cookie::Cookie};
+use actix_web::{
+    web::{Data, Json},
+    HttpResponse,
+};
 
-use crate::{models::user::{NewUser, UserError, User}, utils};
+use crate::{
+    models::user::{NewUser, User, UserError},
+    utils::AppState,
+};
 
-
-
-pub async fn handle(user: Json<NewUser>) -> Result<HttpResponse, UserError> {
-    let connection = utils::establish_connection();
-
+pub async fn handle(state: Data<AppState>, user: Json<NewUser>) -> Result<HttpResponse, UserError> {
+    let connection = state.get_pg_connection();
     match User::authenticate(&connection, &user.email, &user.password) {
-        Ok((valid, token)) => {
-            let cookie = Cookie::new("jwt", token.clone());
-            Ok(HttpResponse::Ok()
-                //.append_header(("jwt", token))
-                .cookie(cookie)
-                .json(valid))
-        }
+        Ok((valid, token)) => Ok(HttpResponse::Ok().append_header(("jwt", token)).json(valid)),
         Err(e) => Err(e),
     }
 }

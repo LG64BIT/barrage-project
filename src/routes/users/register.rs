@@ -1,21 +1,18 @@
-use crate::{
-    models::user::{NewUser, UserError},
-    utils
-};
+use crate::{models::user::NewUser, utils::AppState};
 use actix_web::{
-    web::Json,
-    HttpResponse
+    web::{Data, Json},
+    HttpResponse,
 };
 use validator::Validate;
 
-pub async fn handle(user: Json<NewUser>) -> Result<HttpResponse, UserError> {
-    let connection = utils::establish_connection();
+pub async fn handle(state: Data<AppState>, user: Json<NewUser>) -> HttpResponse {
+    let connection = state.get_pg_connection();
     match user.validate() {
         Ok(_) => (),
-        Err(_) => return Err(UserError::InvalidCredentials),
+        Err(e) => return HttpResponse::BadRequest().json(e),
     };
     match NewUser::create(&connection, &user.email, &user.password) {
-        Ok(created) => Ok(HttpResponse::Ok().json(created)),
-        Err(e) => Err(e),
+        Ok(created) => HttpResponse::Ok().json(created),
+        Err(e) => HttpResponse::from_error(e),
     }
 }
