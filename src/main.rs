@@ -1,10 +1,11 @@
 use actix_web::{
     middleware::Logger,
     web::{self, Data},
-    App, HttpResponse, HttpServer,
+    App, HttpServer,
 };
 use dotenv::dotenv;
 
+pub mod errors;
 pub mod jwt;
 pub mod models;
 pub mod routes;
@@ -27,7 +28,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .app_data(Data::new(utils::initialize()))
             .service(web::scope("/").configure(routes::router))
-            .default_service(web::to(|| HttpResponse::Ok()))
     })
     .bind(("127.0.0.1", 8080))?
     .run()

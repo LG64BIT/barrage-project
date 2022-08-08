@@ -4,6 +4,7 @@ table! {
         name -> Varchar,
         description -> Varchar,
         price -> Int4,
+        stock_quantity -> Int4,
     }
 }
 

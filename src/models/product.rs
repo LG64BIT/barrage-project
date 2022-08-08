@@ -1,7 +1,7 @@
 use crate::diesel::ExpressionMethods;
+use crate::errors::ShopError;
 use crate::schema::products;
 use crate::utils;
-use diesel::result::Error;
 use diesel::{PgConnection, QueryDsl, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 
@@ -11,6 +11,7 @@ pub struct Product {
     pub name: String,
     pub description: String,
     pub price: i32,
+    pub stock_quantity: i32,
 }
 
 ///product with real values for frontend
@@ -20,6 +21,7 @@ pub struct RealProduct {
     pub name: String,
     pub description: String,
     pub price: f32,
+    pub stock_quantity: i32,
 }
 
 impl RealProduct {
@@ -29,6 +31,7 @@ impl RealProduct {
             name: self.name.clone(),
             description: self.description.clone(),
             price: utils::to_cents(self.price),
+            stock_quantity: self.stock_quantity,
         }
     }
 }
@@ -40,6 +43,7 @@ impl Product {
             name: self.name.clone(),
             description: self.description.clone(),
             price: utils::from_cents(self.price),
+            stock_quantity: self.stock_quantity,
         }
     }
 
@@ -52,30 +56,46 @@ impl Product {
                 name: products[i].name.clone(),
                 description: products[i].description.clone(),
                 price: utils::from_cents(products[i].price),
+                stock_quantity: products[i].stock_quantity,
             };
             real_products.push(product);
         }
         real_products
     }
 
-    pub fn get_by_id(connection: &PgConnection, id: &str) -> Result<Product, Error> {
+    pub fn get_by_id(connection: &PgConnection, id: &str) -> Result<Product, ShopError> {
         let result = products::table
             .select(products::all_columns)
             .filter(products::id.eq(id))
-            .load::<Self>(connection);
-        if result.is_err() {
-            return Err(result.err().unwrap());
-        }
-        let result = result.unwrap();
-        if result.len() != 1 {
-            return Err(Error::NotFound);
-        }
-        Ok(Product {
-            id: result[0].id.clone(),
-            name: result[0].name.clone(),
-            description: result[0].description.clone(),
-            price: result[0].price.clone(),
-        })
+            .first::<Self>(connection)?;
+        Ok(result)
+    }
+
+    pub fn get_all(connection: &PgConnection) -> Result<Vec<Product>, ShopError> {
+        let results = products::table
+            .select(products::all_columns)
+            .load::<Self>(connection)?;
+        Ok(results)
+    }
+
+    pub fn insert(
+        connection: &PgConnection,
+        insertable_product: InsertableProduct,
+    ) -> Result<usize, ShopError> {
+        Ok(diesel::insert_into(products::table)
+            .values(insertable_product)
+            .execute(connection)?)
+    }
+
+    pub fn get_stock_quantity(
+        connection: &PgConnection,
+        product_id: &str,
+    ) -> Result<usize, ShopError> {
+        let stock_quantity = products::table
+            .select(products::stock_quantity)
+            .filter(products::id.eq(product_id))
+            .first::<i32>(connection)?;
+        Ok((stock_quantity as usize).try_into().unwrap())
     }
 }
 
@@ -85,6 +105,7 @@ pub struct InsertableProduct {
     pub name: String,
     pub description: String,
     pub price: i32,
+    pub stock_quantity: i32,
 }
 
 impl InsertableProduct {
@@ -93,6 +114,7 @@ impl InsertableProduct {
             name: product.name,
             description: product.description,
             price: utils::to_cents(product.price),
+            stock_quantity: product.stock_quantity,
         }
     }
 }
@@ -103,4 +125,5 @@ pub struct NewProduct {
     pub description: String,
     #[validate(range(min = 0))]
     pub price: f32,
+    pub stock_quantity: i32,
 }

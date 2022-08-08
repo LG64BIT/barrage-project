@@ -1,11 +1,8 @@
-use actix_web::{HttpRequest, HttpResponse, Responder};
+use actix_web::{HttpRequest, HttpResponse};
 
-use crate::models::user::User;
+use crate::{errors::ShopError, models::user::User};
 
-pub async fn handle(req: HttpRequest) -> impl Responder {
-    if let Ok(user) = User::is_logged(&req) {
-        HttpResponse::Ok().json(user)
-    } else {
-        HttpResponse::Forbidden().finish()
-    }
+pub async fn handle(req: HttpRequest) -> Result<HttpResponse, ShopError> {
+    let user = User::is_logged(&req)?;
+    Ok(HttpResponse::Ok().json(user))
 }

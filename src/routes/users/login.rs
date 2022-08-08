@@ -4,14 +4,13 @@ use actix_web::{
 };
 
 use crate::{
-    models::user::{NewUser, User, UserError},
+    errors::ShopError,
+    models::user::{NewUser, User},
     utils::AppState,
 };
 
-pub async fn handle(state: Data<AppState>, user: Json<NewUser>) -> Result<HttpResponse, UserError> {
-    let connection = state.get_pg_connection();
-    match User::authenticate(&connection, &user.email, &user.password) {
-        Ok((valid, token)) => Ok(HttpResponse::Ok().append_header(("jwt", token)).json(valid)),
-        Err(e) => Err(e),
-    }
+pub async fn handle(state: Data<AppState>, user: Json<NewUser>) -> Result<HttpResponse, ShopError> {
+    let connection = state.get_pg_connection()?;
+    let (valid, token) = User::authenticate(&connection, &user.email, &user.password)?;
+    Ok(HttpResponse::Ok().append_header(("jwt", token)).json(valid))
 }
