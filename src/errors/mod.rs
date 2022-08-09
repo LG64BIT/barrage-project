@@ -1,9 +1,11 @@
+use std::num::ParseIntError;
+
 use actix_web::{
     http::{
         header::{ContentType, ToStrError},
         StatusCode,
     },
-    HttpResponse, ResponseError,
+    HttpResponse, ResponseError, error::HttpError,
 };
 use derive_more::Display;
 use validator::ValidationErrors;
@@ -22,6 +24,8 @@ pub enum ShopError {
     SerdeJsonError(String),
     ToStringError(String),
     ValidationErrors(String),
+    ParseError(String),
+    HttpError(String)
 }
 
 impl ResponseError for ShopError {
@@ -31,14 +35,16 @@ impl ResponseError for ShopError {
             ShopError::NotFoundError(_) => StatusCode::NOT_FOUND,
             ShopError::ConnectionError => StatusCode::REQUEST_TIMEOUT,
             ShopError::InvalidInput => StatusCode::BAD_REQUEST,
-            ShopError::NoPermission(_) => StatusCode::FORBIDDEN,
+            ShopError::NoPermission(_) => StatusCode::UNAUTHORIZED,
             ShopError::SerdeJsonError(_) => StatusCode::BAD_REQUEST,
             ShopError::DieselError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ShopError::BcryptError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ShopError::ToStringError(_) => StatusCode::BAD_REQUEST,
             ShopError::JWTError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ShopError::ValidationErrors(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ShopError::NotEnoughInStockError => StatusCode::BAD_REQUEST,
+            ShopError::NotEnoughInStockError => StatusCode::INTERNAL_SERVER_ERROR,
+            ShopError::ParseError(_) => StatusCode::BAD_REQUEST,
+            ShopError::HttpError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -92,5 +98,17 @@ impl From<jsonwebtoken::errors::Error> for ShopError {
 impl From<ValidationErrors> for ShopError {
     fn from(e: ValidationErrors) -> Self {
         ShopError::ValidationErrors(e.to_string())
+    }
+}
+
+impl From<ParseIntError> for ShopError {
+    fn from(e: ParseIntError) -> Self {
+        ShopError::ParseError(e.to_string())
+    }
+}
+
+impl From<HttpError> for ShopError {
+    fn from(e: HttpError) -> Self {
+        ShopError::HttpError(e.to_string())
     }
 }

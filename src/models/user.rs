@@ -131,11 +131,11 @@ impl User {
         if !verify(password, &user.password)? {
             return Err(ShopError::InvalidInput);
         }
-        let token = user.generate_jwt();
+        let token = user.generate_jwt()?;
         Ok((user, token))
     }
 
-    pub fn generate_jwt(&self) -> String {
+    pub fn generate_jwt(&self) -> Result<String, ShopError> {
         crate::jwt::generate(&self)
     }
 

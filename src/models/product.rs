@@ -2,6 +2,7 @@ use crate::diesel::ExpressionMethods;
 use crate::errors::ShopError;
 use crate::schema::products;
 use crate::utils;
+use chrono::NaiveDateTime;
 use diesel::{PgConnection, QueryDsl, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 
@@ -12,9 +13,11 @@ pub struct Product {
     pub description: String,
     pub price: i32,
     pub stock_quantity: i32,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
-///product with real values for frontend
+///product with real (floating point) values for frontend
 #[derive(Queryable, Debug, Serialize)]
 pub struct RealProduct {
     pub id: String,
@@ -22,6 +25,8 @@ pub struct RealProduct {
     pub description: String,
     pub price: f32,
     pub stock_quantity: i32,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
 impl RealProduct {
@@ -32,6 +37,8 @@ impl RealProduct {
             description: self.description.clone(),
             price: utils::to_cents(self.price),
             stock_quantity: self.stock_quantity,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
         }
     }
 }
@@ -44,6 +51,8 @@ impl Product {
             description: self.description.clone(),
             price: utils::from_cents(self.price),
             stock_quantity: self.stock_quantity,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
         }
     }
 
@@ -57,6 +66,8 @@ impl Product {
                 description: products[i].description.clone(),
                 price: utils::from_cents(products[i].price),
                 stock_quantity: products[i].stock_quantity,
+                created_at: products[i].created_at,
+                updated_at: products[i].updated_at,
             };
             real_products.push(product);
         }
@@ -96,6 +107,22 @@ impl Product {
             .filter(products::id.eq(product_id))
             .first::<i32>(connection)?;
         Ok((stock_quantity as usize).try_into().unwrap())
+    }
+
+    pub fn reduce_stock_quantity(
+        connection: &PgConnection,
+        product_id: &str,
+        amount: usize,
+    ) -> Result<usize, ShopError> {
+        let stock_quantity = products::table
+            .select(products::stock_quantity)
+            .filter(products::id.eq(product_id))
+            .get_result::<i32>(connection)?;
+
+        Ok(diesel::update(products::table)
+            .set(products::stock_quantity.eq(stock_quantity - amount as i32))
+            .filter(products::id.eq(product_id))
+            .execute(connection)?)
     }
 }
 

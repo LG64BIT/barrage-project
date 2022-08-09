@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use actix_web::{cookie::Cookie, HttpRequest, HttpResponse};
 use diesel::PgConnection;
 use serde::{Deserialize, Serialize};
 
@@ -50,6 +51,17 @@ impl Cart {
             return;
         }
         *qty -= quantity;
+    }
+
+    pub fn get(req: &HttpRequest) -> Result<Cart, ShopError> {
+        let cookie = match req.cookie("cart") {
+            Some(c) => c,
+            None => {
+                let cart = Cart::new();
+                Cookie::new("cart", serde_json::to_string(&cart)?)
+            }
+        };
+        Ok(serde_json::from_str::<Cart>(&cookie.value().to_string())?)
     }
 }
 

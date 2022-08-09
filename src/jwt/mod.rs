@@ -1,9 +1,9 @@
 use chrono::{Duration, NaiveDateTime, Utc};
-use jsonwebtoken::{errors::Error, *};
+use jsonwebtoken::*;
 use serde::{Deserialize, Serialize};
 use std::env;
 
-use crate::models::user::User;
+use crate::{errors::ShopError, models::user::User};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserClaims {
     pub id: String,
@@ -15,12 +15,11 @@ pub struct UserClaims {
     pub iat: i64,
 }
 
-pub fn generate(user: &User) -> String {
+pub fn generate(user: &User) -> Result<String, ShopError> {
     let secret = env::var("JWT_SECRET_KEY").unwrap_or_else(|_| "".into());
     let duration = env::var("JWT_LIFETIME_IN_SECONDS")
         .unwrap_or_else(|_| "300".into())
-        .parse()
-        .unwrap();
+        .parse()?;
     let exp = Utc::now() + Duration::seconds(duration);
     let claims = UserClaims {
         id: String::from(&user.id),
@@ -31,15 +30,14 @@ pub fn generate(user: &User) -> String {
         exp: exp.timestamp(),
         iat: Utc::now().timestamp(),
     };
-    encode(
+    Ok(encode(
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(&secret.as_bytes()),
-    )
-    .unwrap_or_default()
+    )?)
 }
 
-pub fn verify(token: String) -> Result<User, Error> {
+pub fn verify(token: String) -> Result<User, ShopError> {
     let secret = dotenv::var("JWT_SECRET_KEY");
     let secret = secret.unwrap_or_else(|_| "".into());
     let token_data = decode::<UserClaims>(

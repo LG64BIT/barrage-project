@@ -3,7 +3,8 @@ use actix_web::{
     Responder,
 };
 
-pub mod cart;
+pub mod carts;
+pub mod orders;
 pub mod products;
 pub mod users;
 
@@ -20,17 +21,18 @@ pub fn router(conf: &mut ServiceConfig) {
         web::resource("/user/{id}")
             .route(web::put().to(users::update::handle))
             .route(web::get().to(users::get::handle))
-            .route(web::delete().to(users::delete::handle))
+            .route(web::delete().to(users::delete::handle)),
     );
     conf.service(web::resource("/addProduct").route(web::post().to(products::add::handle)));
     conf.service(web::resource("/products").route(web::get().to(products::all::handle)));
     conf.service(
         web::resource("/products/{product_id}").route(web::get().to(products::single::handle)),
     );
-    conf.service(web::resource("/cart/{product_id}").route(web::post().to(cart::add::handle)));
+    conf.service(web::resource("/cart/{product_id}").route(web::post().to(carts::add::handle)));
     conf.service(
         web::resource("/cart")
-            .route(web::get().to(cart::get::handle))
-            .route(web::delete().to(cart::empty::handle)),
+            .route(web::get().to(carts::get::handle))
+            .route(web::delete().to(carts::empty::handle)),
     );
+    conf.service(web::resource("/order").route(web::get().to(orders::add::handle)));
 }

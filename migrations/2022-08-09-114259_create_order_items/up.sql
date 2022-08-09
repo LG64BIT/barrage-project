@@ -1,10 +1,9 @@
 -- Your SQL goes here
-CREATE TABLE products (
-    id varchar(36) DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
-    name VARCHAR NOT NULL,
-    description VARCHAR NOT NULL,
-    price INT NOT NULL,
-    stock_quantity INT NOT NULL,
+CREATE TABLE order_items (
+    id VARCHAR(36) DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+    order_id VARCHAR(36) NOT NULL,
+    product_id VARCHAR(36) NOT NULL,
+    quantity INT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -18,6 +17,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER set_timestamp
-BEFORE UPDATE ON products
+BEFORE UPDATE ON order_items
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
