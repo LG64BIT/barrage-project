@@ -17,7 +17,9 @@ pub struct User {
     #[serde(skip_serializing)]
     pub password: String,
     pub is_admin: bool,
+    #[serde(skip_serializing)]
     pub created_at: NaiveDateTime,
+    #[serde(skip_serializing)]
     pub updated_at: NaiveDateTime,
 }
 

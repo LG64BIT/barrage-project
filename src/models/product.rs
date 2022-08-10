@@ -25,7 +25,9 @@ pub struct RealProduct {
     pub description: String,
     pub price: f32,
     pub stock_quantity: i32,
+    #[serde(skip_serializing)]
     pub created_at: NaiveDateTime,
+    #[serde(skip_serializing)]
     pub updated_at: NaiveDateTime,
 }
 

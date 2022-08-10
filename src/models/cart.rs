@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use actix_web::{cookie::Cookie, HttpRequest, HttpResponse};
+use actix_web::{cookie::Cookie, HttpRequest};
 use diesel::PgConnection;
 use serde::{Deserialize, Serialize};
 
@@ -10,7 +10,7 @@ use super::product::Product;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Cart {
-    pub items: HashMap<String, usize>, // K: product_id, V: quantity
+    items: HashMap<String, usize>, // K: product_id, V: quantity
 }
 
 impl Cart {
@@ -18,6 +18,15 @@ impl Cart {
         Cart {
             items: HashMap::new(),
         }
+    }
+
+    pub fn get_content(&self) -> &HashMap<String, usize> {
+        &self.items
+    }
+
+    /// Checks whether cart is empty
+    pub fn is_empty(&self) -> bool {
+        self.get_content().is_empty()
     }
 
     pub fn add(
@@ -52,7 +61,7 @@ impl Cart {
         }
         *qty -= quantity;
     }
-
+    /// get Cart from request cookies
     pub fn get(req: &HttpRequest) -> Result<Cart, ShopError> {
         let cookie = match req.cookie("cart") {
             Some(c) => c,

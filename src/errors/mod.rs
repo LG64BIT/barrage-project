@@ -1,16 +1,16 @@
-use std::num::ParseIntError;
-
 use actix_web::{
+    error::HttpError,
     http::{
         header::{ContentType, ToStrError},
         StatusCode,
     },
-    HttpResponse, ResponseError, error::HttpError,
+    HttpResponse, ResponseError,
 };
 use derive_more::Display;
+use std::num::ParseIntError;
 use validator::ValidationErrors;
 
-#[derive(Debug, Display, Clone)]
+#[derive(Debug, Display)]
 pub enum ShopError {
     AlreadyExistsError,
     BcryptError(String),
@@ -25,7 +25,7 @@ pub enum ShopError {
     ToStringError(String),
     ValidationErrors(String),
     ParseError(String),
-    HttpError(String)
+    HttpError(String),
 }
 
 impl ResponseError for ShopError {

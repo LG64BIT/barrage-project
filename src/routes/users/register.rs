@@ -17,6 +17,5 @@ pub async fn handle(
     let new_user = new_user.into_inner();
     new_user.validate()?;
     let created = User::create(&connection, new_user)?;
-    //let created = new_user.into_inner().create(&connection)?;
     Ok(HttpResponse::Ok().json(created))
 }
