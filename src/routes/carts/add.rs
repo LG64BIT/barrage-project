@@ -15,31 +15,14 @@ pub async fn handle(
     req: HttpRequest,
 ) -> Result<HttpResponse, ShopError> {
     let connection = state.get_pg_connection()?;
-    let cookie = match req.cookie("cart") {
-        Some(c) => c,
-        None => {
-            let cart = Cart::new();
-            Cookie::new(
-                "cart",
-                serde_json::to_string(&cart).expect("Failed parsing cart to string!"),
-            )
-        }
-    };
-    let mut cart = match serde_json::from_str::<Cart>(&cookie.value().to_string()) {
-        Ok(c) => c,
-        Err(e) => return Ok(HttpResponse::InternalServerError().json(e.to_string())),
-    };
+    let mut cart = Cart::get(&req)?;
     cart.add(
         &connection,
         product_id.to_string(),
         item.into_inner().quantity,
     )?;
-    let cart = match serde_json::to_string(&cart) {
-        Ok(c) => c,
-        Err(e) => return Ok(HttpResponse::InternalServerError().json(e.to_string())),
-    };
+    let cart = serde_json::to_string(&cart)?;
     let mut cookie = Cookie::new("cart", cart);
     cookie.set_path("/");
-
     Ok(HttpResponse::Ok().cookie(cookie).finish())
 }

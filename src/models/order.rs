@@ -3,6 +3,7 @@ use super::{cart::Cart, product::Product};
 use crate::diesel::RunQueryDsl;
 use crate::models::order_item::InsertableOrderItem;
 use crate::schema::order_items;
+use crate::utils;
 use crate::{errors::ShopError, schema::orders};
 use actix_web::cookie::Cookie;
 use actix_web::HttpResponse;
@@ -91,7 +92,7 @@ impl Order {
         ShowOrder {
             id: self.id,
             user_id: self.user_id,
-            total: self.total as f32 / 100.0,
+            total: utils::from_cents(self.total),
             status: self.status,
             created_at: self.created_at,
             updated_at: self.updated_at,
