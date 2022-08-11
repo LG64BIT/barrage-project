@@ -1,6 +1,6 @@
 use super::order::ShowOrder;
-use super::product::RealProduct;
 use super::product::Product;
+use super::product::RealProduct;
 use crate::diesel::ExpressionMethods;
 use crate::errors::ShopError;
 use crate::schema::{order_items, products};
